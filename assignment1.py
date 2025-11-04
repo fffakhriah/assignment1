@@ -125,16 +125,37 @@ def run_three_trials(csv_path, param_sets, generations=GENERATIONS, pop_size=POP
     return results
 
 if __name__ == "__main__":
-    # Example parameter sets for 3 trials (you can change)
+    # Example parameter sets for 3 trials (you can change these)
     param_sets = [
         (0.8, 0.02),
         (0.9, 0.04),
-        (0.7, 0.01)
+        (0.7, 0.01),
     ]
-    results = run_three_trials(CSV_PATH, param_sets,
-                               generations=GENERATIONS,
-                               pop_size=POPULATION_SIZE)
-    # Print summary
-    print("\nSummary of 3 trials:")
-    for r in results:
-        print(f"Trial {r['trial']}: CO_R={r['co_r']}, MUT_R={r['mut_r']}, Score={round(r['score'],4)}")
+
+    print("\n🚀 Starting Genetic Algorithm TV Scheduling...\n")
+
+    try:
+        # ✅ Run the 3 trials
+        results = run_three_trials(
+            CSV_PATH,
+            param_sets,
+            generations=GENERATIONS,
+            pop_size=POPULATION_SIZE,
+        )
+
+        # ✅ Print summary of all trials
+        print("\n📊 Summary of 3 trials:")
+        for r in results:
+            print(f"Trial {r['trial']}: CO_R={r['co_r']}, MUT_R={r['mut_r']}, Score={round(r['score'], 4)}")
+
+        print("\n✅ All trials completed successfully!")
+
+    except FileNotFoundError as fnf:
+        print(f"\n❌ File not found error:\n{fnf}\n"
+              "➡️ Please check your CSV_PATH or move the CSV file into the same folder as this script.")
+    except ValueError as ve:
+        print(f"\n⚠️ Value error (data issue):\n{ve}\n"
+              "➡️ Check that your CSV columns are named 'Hour 6' through 'Hour 23'.")
+    except Exception as e:
+        print(f"\n⚠️ Unexpected error occurred:\n{e}\n"
+              "➡️ Please review the traceback or file format.")
