@@ -97,8 +97,12 @@ best_schedule = finding_best_schedule(all_possible_schedules)
 
 ############################################# GENETIC ALGORITHM #############################################################################
 
-# Crossover
+# ✅ Fixed crossover function
 def crossover(schedule1, schedule2):
+    # If schedules are too short for crossover, just return copies
+    if len(schedule1) < 3 or len(schedule2) < 3:
+        return schedule1.copy(), schedule2.copy()
+    
     crossover_point = random.randint(1, len(schedule1) - 2)
     child1 = schedule1[:crossover_point] + schedule2[crossover_point:]
     child2 = schedule2[:crossover_point] + schedule1[crossover_point:]
@@ -107,6 +111,8 @@ def crossover(schedule1, schedule2):
 
 # mutating
 def mutate(schedule):
+    if len(schedule) == 0:
+        return schedule
     mutation_point = random.randint(0, len(schedule) - 1)
     new_program = random.choice(all_programs)
     schedule[mutation_point] = new_program
