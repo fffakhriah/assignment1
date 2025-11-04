@@ -5,7 +5,7 @@ import pandas as pd
 from pprint import pprint
 
 # ---------- SETTINGS ----------
-CSV_PATH = "C:\Users\User\Desktop\COMPUTER EOLUTION"  # change to your file path
+CSV_PATH = "C:/Users/User/Desktop/COMPUTER EOLUTION"  # change to your file path
 HOUR_COLUMNS = [f"Hour {h}" for h in range(6, 24)]  # Hour 6..Hour 23 inclusive
 GENERATIONS = 200
 POPULATION_SIZE = 100
