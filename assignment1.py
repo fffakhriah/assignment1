@@ -1,24 +1,33 @@
 import csv
 import random
+import os
 
 # Function to read the CSV file and convert it to the desired format
 def read_csv_to_dict(file_path):
     program_ratings = {}
-    
-    with open(file_path, mode='r', newline='') as file:
-        reader = csv.reader(file)
-        # Skip the header
-        header = next(reader)
-        
-        for row in reader:
-            program = row[0]
-            ratings = [float(x) for x in row[1:]]  # Convert the ratings to floats
-            program_ratings[program] = ratings
+
+    # Check if file exists first
+    if not os.path.exists(file_path):
+        print(f"❌ Error: File not found at {file_path}")
+        return program_ratings
+
+    try:
+        with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            # Skip the header
+            header = next(reader)
+            
+            for row in reader:
+                program = row[0]
+                ratings = [float(x) for x in row[1:]]  # Convert the ratings to floats
+                program_ratings[program] = ratings
+    except Exception as e:
+        print(f"❌ Error reading CSV: {e}")
     
     return program_ratings
 
 
-# Path to the CSV file (✅ corrected file path)
+# ✅ Corrected path (make sure the folder and file exist)
 file_path = r"C:\Users\User\Desktop\COMPUTER EVOLUTION\program_ratings.csv"
 
 # Get the data in the required format
@@ -41,6 +50,7 @@ EL_S = 2
 
 all_programs = list(ratings.keys())  # all programs
 all_time_slots = list(range(6, 24))  # time slots
+
 
 ######################################### DEFINING FUNCTIONS ########################################################################
 # defining fitness function
