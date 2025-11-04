@@ -1,161 +1,161 @@
-# save as ga_tv_scheduler.py and run with: python ga_tv_scheduler.py
 import csv
 import random
-import pandas as pd
-from pprint import pprint
 
-# ---------- SETTINGS ----------
-CSV_PATH = r"C:\Users\User\Desktop\COMPUTER EOLUTION\program_ratings.csv" # change to your file path
-HOUR_COLUMNS = [f"Hour {h}" for h in range(6, 24)]  # Hour 6..Hour 23 inclusive
-GENERATIONS = 200
-POPULATION_SIZE = 100
-ELITISM_SIZE = 4
-TOURNAMENT_SIZE = 2
-# -------------------------------
+# Function to read the CSV file and convert it to the desired format
+def read_csv_to_dict(file_path):
+    program_ratings = {}
+    
+    with open(file_path, mode='r', newline='') as file:
+        reader = csv.reader(file)
+        # Skip the header
+        header = next(reader)
+        
+        for row in reader:
+            program = row[0]
+            ratings = [float(x) for x in row[1:]]  # Convert the ratings to floats
+            program_ratings[program] = ratings
+    
+    return program_ratings
 
-def read_ratings(csv_path):
-    df = pd.read_csv(csv_path)
-    # ensure columns match hours
-    missing = [c for c in HOUR_COLUMNS if c not in df.columns]
-    if missing:
-        raise ValueError(f"CSV missing hour columns: {missing}")
-    programs = list(df.iloc[:,0])  # first column assumed program name
-    ratings = {}
-    for idx, prog in enumerate(programs):
-        row = df.loc[idx, HOUR_COLUMNS].astype(float).tolist()
-        ratings[str(prog)] = row
-    return ratings, programs
 
-# fitness: sum of ratings per hour for schedule (schedule length = num_slots)
-def fitness_function(schedule, ratings):
-    total = 0.0
-    for slot_idx, program in enumerate(schedule):
-        total += ratings[program][slot_idx]
-    return total
+# Path to the CSV file (✅ corrected file path)
+file_path = r"C:\Users\User\Desktop\COMPUTER EOLUTION\program_ratings.csv"
 
-# initialize population: random schedules (program chosen for each hour, repeats allowed)
-def init_population(programs, num_slots, pop_size):
-    population = []
-    for _ in range(pop_size):
-        schedule = [random.choice(programs) for _ in range(num_slots)]
-        population.append(schedule)
-    return population
+# Get the data in the required format
+program_ratings_dict = read_csv_to_dict(file_path)
 
-# tournament selection
-def tournament_selection(population, ratings, k=TOURNAMENT_SIZE):
-    candidates = random.sample(population, k)
-    candidates.sort(key=lambda s: fitness_function(s, ratings), reverse=True)
-    return candidates[0]
+# Print the result (you can also return or process it further)
+for program, ratings in program_ratings_dict.items():
+    print(f"'{program}': {ratings},")
 
-# single point crossover
-def crossover(parent1, parent2):
-    if len(parent1) <= 1:
-        return parent1.copy(), parent2.copy()
-    point = random.randint(1, len(parent1)-1)
-    child1 = parent1[:point] + parent2[point:]
-    child2 = parent2[:point] + parent1[point:]
+
+##################################### DEFINING PARAMETERS AND DATASET ################################################################
+# Sample rating programs dataset for each time slot.
+ratings = program_ratings_dict
+
+GEN = 100
+POP = 50
+CO_R = 0.8
+MUT_R = 0.2
+EL_S = 2
+
+all_programs = list(ratings.keys())  # all programs
+all_time_slots = list(range(6, 24))  # time slots
+
+######################################### DEFINING FUNCTIONS ########################################################################
+# defining fitness function
+def fitness_function(schedule):
+    total_rating = 0
+    for time_slot, program in enumerate(schedule):
+        total_rating += ratings[program][time_slot]
+    return total_rating
+
+
+# initializing the population (brute-force)
+def initialize_pop(programs, time_slots):
+    if not programs:
+        return [[]]
+
+    all_schedules = []
+    for i in range(len(programs)):
+        for schedule in initialize_pop(programs[:i] + programs[i + 1:], time_slots):
+            all_schedules.append([programs[i]] + schedule)
+
+    return all_schedules
+
+
+# selection
+def finding_best_schedule(all_schedules):
+    best_schedule = []
+    max_ratings = 0
+
+    for schedule in all_schedules:
+        total_ratings = fitness_function(schedule)
+        if total_ratings > max_ratings:
+            max_ratings = total_ratings
+            best_schedule = schedule
+
+    return best_schedule
+
+
+# calling the pop func.
+all_possible_schedules = initialize_pop(all_programs, all_time_slots)
+
+# calling the schedule func.
+best_schedule = finding_best_schedule(all_possible_schedules)
+
+
+############################################# GENETIC ALGORITHM #############################################################################
+
+# Crossover
+def crossover(schedule1, schedule2):
+    crossover_point = random.randint(1, len(schedule1) - 2)
+    child1 = schedule1[:crossover_point] + schedule2[crossover_point:]
+    child2 = schedule2[:crossover_point] + schedule1[crossover_point:]
     return child1, child2
 
-# mutation: with certain probability per gene replace program with random program
-def mutate(schedule, programs, mutation_rate):
-    new = schedule.copy()
-    for i in range(len(new)):
-        if random.random() < mutation_rate:
-            new[i] = random.choice(programs)
-    return new
 
-def evolve(ratings, programs, num_slots,
-           generations=GENERATIONS,
-           pop_size=POPULATION_SIZE,
-           crossover_rate=0.8,
-           mutation_rate=0.02,
-           elitism_size=ELITISM_SIZE):
-    # init
-    population = init_population(programs, num_slots, pop_size)
-    for gen in range(generations):
-        # evaluate & sort
-        population.sort(key=lambda s: fitness_function(s, ratings), reverse=True)
-        new_pop = population[:elitism_size]  # elitism
-        # generate offspring
-        while len(new_pop) < pop_size:
-            parent1 = tournament_selection(population, ratings)
-            parent2 = tournament_selection(population, ratings)
+# mutating
+def mutate(schedule):
+    mutation_point = random.randint(0, len(schedule) - 1)
+    new_program = random.choice(all_programs)
+    schedule[mutation_point] = new_program
+    return schedule
+
+
+# calling the fitness func.
+def evaluate_fitness(schedule):
+    return fitness_function(schedule)
+
+
+# genetic algorithms with parameters
+def genetic_algorithm(initial_schedule, generations=GEN, population_size=POP, crossover_rate=CO_R, mutation_rate=MUT_R, elitism_size=EL_S):
+
+    population = [initial_schedule]
+
+    for _ in range(population_size - 1):
+        random_schedule = initial_schedule.copy()
+        random.shuffle(random_schedule)
+        population.append(random_schedule)
+
+    for generation in range(generations):
+        new_population = []
+
+        # Elitism
+        population.sort(key=lambda schedule: fitness_function(schedule), reverse=True)
+        new_population.extend(population[:elitism_size])
+
+        while len(new_population) < population_size:
+            parent1, parent2 = random.choices(population, k=2)
             if random.random() < crossover_rate:
                 child1, child2 = crossover(parent1, parent2)
             else:
                 child1, child2 = parent1.copy(), parent2.copy()
-            child1 = mutate(child1, programs, mutation_rate)
-            child2 = mutate(child2, programs, mutation_rate)
-            new_pop.append(child1)
-            if len(new_pop) < pop_size:
-                new_pop.append(child2)
-        population = new_pop
-    # final sort and return best
-    population.sort(key=lambda s: fitness_function(s, ratings), reverse=True)
-    best = population[0]
-    best_score = fitness_function(best, ratings)
-    return best, best_score
 
-def schedule_to_table(schedule, all_hours):
-    rows = []
-    for i, prog in enumerate(schedule):
-        hour = all_hours[i]
-        rows.append({"Hour": hour, "Program": prog})
-    return pd.DataFrame(rows)
+            if random.random() < mutation_rate:
+                child1 = mutate(child1)
+            if random.random() < mutation_rate:
+                child2 = mutate(child2)
 
-def run_three_trials(csv_path, param_sets, generations=GENERATIONS, pop_size=POPULATION_SIZE):
-    ratings, programs = read_ratings(csv_path)
-    num_slots = len(HOUR_COLUMNS)
-    all_hours = [f"{h}:00" for h in range(6, 24)]
-    results = []
-    for idx, (co_r, mut_r) in enumerate(param_sets, start=1):
-        print(f"\n=== Trial {idx} (CO_R={co_r}, MUT_R={mut_r}) ===")
-        best_sched, best_score = evolve(ratings, programs, num_slots,
-                                        generations=generations,
-                                        pop_size=pop_size,
-                                        crossover_rate=co_r,
-                                        mutation_rate=mut_r,
-                                        elitism_size=ELITISM_SIZE)
-        df_table = schedule_to_table(best_sched, all_hours)
-        print(df_table.to_string(index=False))
-        print("Total Score (fitness):", round(best_score, 4))
-        # Save CSV of schedule for that trial
-        df_table.to_csv(f"best_schedule_trial_{idx}.csv", index=False)
-        results.append({"trial": idx, "co_r": co_r, "mut_r": mut_r, "score": best_score, "schedule_df": df_table})
-    return results
+            new_population.extend([child1, child2])
 
-if __name__ == "__main__":
-    # Example parameter sets for 3 trials (you can change these)
-    param_sets = [
-        (0.8, 0.02),
-        (0.9, 0.04),
-        (0.7, 0.01),
-    ]
+        population = new_population
 
-    print("\n🚀 Starting Genetic Algorithm TV Scheduling...\n")
+    return population[0]
 
-    try:
-        # ✅ Run the 3 trials
-        results = run_three_trials(
-            CSV_PATH,
-            param_sets,
-            generations=GENERATIONS,
-            pop_size=POPULATION_SIZE,
-        )
 
-        # ✅ Print summary of all trials
-        print("\n📊 Summary of 3 trials:")
-        for r in results:
-            print(f"Trial {r['trial']}: CO_R={r['co_r']}, MUT_R={r['mut_r']}, Score={round(r['score'], 4)}")
+##################################################### RESULTS ###################################################################################
 
-        print("\n✅ All trials completed successfully!")
+# brute force
+initial_best_schedule = finding_best_schedule(all_possible_schedules)
 
-    except FileNotFoundError as fnf:
-        print(f"\n❌ File not found error:\n{fnf}\n"
-              "➡️ Please check your CSV_PATH or move the CSV file into the same folder as this script.")
-    except ValueError as ve:
-        print(f"\n⚠️ Value error (data issue):\n{ve}\n"
-              "➡️ Check that your CSV columns are named 'Hour 6' through 'Hour 23'.")
-    except Exception as e:
-        print(f"\n⚠️ Unexpected error occurred:\n{e}\n"
-              "➡️ Please review the traceback or file format.")
+rem_t_slots = len(all_time_slots) - len(initial_best_schedule)
+genetic_schedule = genetic_algorithm(initial_best_schedule, generations=GEN, population_size=POP, elitism_size=EL_S)
+
+final_schedule = initial_best_schedule + genetic_schedule[:rem_t_slots]
+
+print("\nFinal Optimal Schedule:")
+for time_slot, program in enumerate(final_schedule):
+    print(f"Time Slot {all_time_slots[time_slot]:02d}:00 - Program {program}")
+
+print("Total Ratings:", fitness_function(final_schedule))
