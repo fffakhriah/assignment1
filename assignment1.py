@@ -22,14 +22,13 @@ def read_csv_to_dict(file_path):
         st.error(f"❌ Error reading CSV: {e}")
     return program_ratings
 
-
 # ==================== STREAMLIT UI ====================
+st.set_page_config(page_title="TV Scheduling Optimizer", layout="wide")
 st.title("📺 TV Program Scheduling Optimizer")
 st.write("This app uses a Genetic Algorithm to find the best TV schedule based on ratings.")
 
 # Use local file path (same folder as main.py)
-file_path = "program_ratings.csv"  # 👈 make sure this CSV is in the same directory
-
+file_path = "program_ratings.csv"
 program_ratings_dict = read_csv_to_dict(file_path)
 
 if not program_ratings_dict:
@@ -37,8 +36,19 @@ if not program_ratings_dict:
     st.stop()
 
 ratings = program_ratings_dict
-GEN = st.slider("Generations", 10, 500, 100)
-POP = st.slider("Population Size", 10, 200, 50)
+
+# ========================================
+# Sliders tepi-menyebelah
+# ========================================
+col1, col2 = st.columns(2)
+
+with col1:
+    GEN = st.slider("Generations", 10, 500, 100)
+
+with col2:
+    POP = st.slider("Population Size", 10, 200, 50)
+
+# Constants
 CO_R = 0.8
 MUT_R = 0.2
 EL_S = 2
@@ -53,7 +63,6 @@ def fitness_function(schedule):
         total_rating += ratings[program][time_slot % len(ratings[program])]
     return total_rating
 
-
 def crossover(schedule1, schedule2):
     if len(schedule1) < 3 or len(schedule2) < 3:
         return schedule1.copy(), schedule2.copy()
@@ -61,7 +70,6 @@ def crossover(schedule1, schedule2):
     child1 = schedule1[:crossover_point] + schedule2[crossover_point:]
     child2 = schedule2[:crossover_point] + schedule1[crossover_point:]
     return child1, child2
-
 
 def mutate(schedule):
     if len(schedule) == 0:
@@ -71,14 +79,12 @@ def mutate(schedule):
     schedule[mutation_point] = new_program
     return schedule
 
-
 def initialize_population(pop_size, programs, time_slots):
     population = []
     for _ in range(pop_size):
         schedule = random.choices(programs, k=len(time_slots))
         population.append(schedule)
     return population
-
 
 def genetic_algorithm(generations=GEN, population_size=POP, crossover_rate=CO_R, mutation_rate=MUT_R, elitism_size=EL_S):
     population = initialize_population(population_size, all_programs, all_time_slots)
@@ -101,19 +107,25 @@ def genetic_algorithm(generations=GEN, population_size=POP, crossover_rate=CO_R,
 
             new_population.extend([child1, child2])
 
-        population = new_population
+        population = new_population[:population_size]  # Ensure population size
 
     best_schedule = max(population, key=fitness_function)
     return best_schedule
 
-
+# ==================== RUN BUTTON ====================
 if st.button("🚀 Run Genetic Algorithm"):
-    best_schedule = genetic_algorithm()
-    total_rating = fitness_function(best_schedule)
+    with st.spinner("Running Genetic Algorithm..."):
+        best_schedule = genetic_algorithm()
+        total_rating = fitness_function(best_schedule)
 
     st.success("✅ Optimal Schedule Found!")
+
+    # ========================================
+    # Table hasil jadual
+    # ========================================
     st.table({
         "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
         "Program": best_schedule
     })
+
     st.write(f"**Total Ratings:** {total_rating:.2f}")
