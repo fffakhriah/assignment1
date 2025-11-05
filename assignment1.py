@@ -38,15 +38,23 @@ if not program_ratings_dict:
 ratings = program_ratings_dict
 
 # ========================================
-# Sliders tepi-menyebelah
+# Dropdown untuk Generations & Population
 # ========================================
 col1, col2 = st.columns(2)
 
 with col1:
-    GEN = st.slider("Generations", 10, 500, 100)
+    GEN = st.selectbox(
+        "Generations",
+        options=[10, 50, 100, 200, 300, 400, 500],
+        index=2  # default 100
+    )
 
 with col2:
-    POP = st.slider("Population Size", 10, 200, 50)
+    POP = st.selectbox(
+        "Population Size",
+        options=[10, 20, 50, 100, 150, 200],
+        index=2  # default 50
+    )
 
 # Constants
 CO_R = 0.8
