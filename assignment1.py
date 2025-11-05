@@ -64,7 +64,7 @@ with col_left:
     run_button = st.button("🚀 Run Genetic Algorithm")
 
 # --------------------
-# Kanan: hasil
+# Kanan: hasil (compact dengan expander)
 # --------------------
 with col_right:
     st.header("🎯 Best Schedule Achieved!")
@@ -73,6 +73,7 @@ with col_right:
             all_programs = list(ratings.keys())
             all_time_slots = list(range(6, 24))
 
+            # ==================== GA FUNCTIONS ====================
             def fitness_function(schedule):
                 total_rating = 0
                 for time_slot, program in enumerate(schedule):
@@ -124,8 +125,11 @@ with col_right:
             total_rating = fitness_function(best_schedule)
 
         st.success("✅ Optimal Schedule Found!")
-        st.table({
-            "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
-            "Program": best_schedule
-        })
-        st.write(f"**Total Ratings:** {total_rating:.2f}")
+
+        # ==================== Compact Result dengan Expander ====================
+        with st.expander("📅 View Optimized Schedule"):
+            st.table({
+                "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
+                "Program": best_schedule
+            })
+            st.write(f"**Total Ratings:** {total_rating:.2f}")
