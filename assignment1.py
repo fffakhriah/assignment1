@@ -25,10 +25,10 @@ def read_csv_to_dict(file_path):
 # ==================== STREAMLIT UI ====================
 st.set_page_config(page_title="TV Scheduling Optimizer", layout="wide")
 st.title("📺 TV Program Scheduling Optimizer")
-st.write("This app uses a Genetic Algorithm to find the best TV schedule based on program ratings.")
+st.write("This app uses a Genetic Algorithm to find the best TV schedule based on ratings.")
 
-# Use your modified CSV file
-file_path = "program_ratings_modified.csv"
+# Use local file path (same folder as main.py)
+file_path = "program_ratings.csv"
 program_ratings_dict = read_csv_to_dict(file_path)
 
 if not program_ratings_dict:
@@ -38,51 +38,41 @@ if not program_ratings_dict:
 ratings = program_ratings_dict
 
 # ========================================
-# LAYOUT: KIRI untuk input, KANAN untuk result
+# LAYOUT: LEFT for input, RIGHT for result
 # ========================================
 col_left, col_right = st.columns([1, 2])
 
 # --------------------
-# Kiri: parameter input
+# LEFT SIDE: User inputs
 # --------------------
 with col_left:
     st.header("⚙️ Parameters")
-    GEN = st.selectbox(
-        "Generations",
-        options=[10, 50, 100, 200, 300, 400, 500],
-        index=2
-    )
-    POP = st.selectbox(
-        "Population Size",
-        options=[10, 20, 50, 100, 150, 200],
-        index=2
-    )
 
-    # Add sliders for Crossover & Mutation Rate
     CO_R = st.slider(
         "Crossover Rate (CO_R)",
-        min_value=0.0,
-        max_value=0.95,
-        value=0.8,
-        step=0.05
+        min_value=0.0, max_value=0.95, value=0.8, step=0.05,
+        help="Controls how often crossover occurs between schedules."
     )
 
     MUT_R = st.slider(
         "Mutation Rate (MUT_R)",
-        min_value=0.01,
-        max_value=0.05,
-        value=0.02,
-        step=0.01
+        min_value=0.01, max_value=0.05, value=0.02, step=0.01,
+        help="Controls how often mutations occur in the schedule."
     )
 
-    EL_S = 2
+    # Default values (not editable by user)
+    GEN = 100   # Number of generations
+    POP = 50    # Population size
+    EL_S = 2    # Elitism size
+
     run_button = st.button("🚀 Run Genetic Algorithm")
 
 # --------------------
-# Kanan: hasil (kotak biasa)
+# RIGHT SIDE: Results
 # --------------------
 with col_right:
-    st.header("🎯 Best Schedule Result")
+    st.header("🎯 Best Schedule Achieved!")
+
     if run_button:
         with st.spinner("Running Genetic Algorithm..."):
             all_programs = list(ratings.keys())
@@ -117,7 +107,10 @@ with col_right:
                     population.append(schedule)
                 return population
 
-            def genetic_algorithm(generations=GEN, population_size=POP, crossover_rate=CO_R, mutation_rate=MUT_R, elitism_size=EL_S):
+            def genetic_algorithm(
+                generations=GEN, population_size=POP, crossover_rate=CO_R,
+                mutation_rate=MUT_R, elitism_size=EL_S
+            ):
                 population = initialize_population(population_size, all_programs, all_time_slots)
                 for _ in range(generations):
                     population.sort(key=lambda s: fitness_function(s), reverse=True)
@@ -136,12 +129,13 @@ with col_right:
                     population = new_population[:population_size]
                 return max(population, key=fitness_function)
 
-            best_schedule = genetic_algorithm(crossover_rate=CO_R, mutation_rate=MUT_R)
+            # Run GA
+            best_schedule = genetic_algorithm()
             total_rating = fitness_function(best_schedule)
 
         st.success("✅ Optimal Schedule Found!")
 
-        # ==================== Display result ====================
+        # ==================== RESULTS TABLE ====================
         st.subheader("📅 Schedule Table")
         st.table({
             "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
@@ -151,4 +145,4 @@ with col_right:
         st.subheader("🏆 Total Rating")
         st.write(f"**Total Ratings:** {total_rating:.2f}")
 
-        st.info(f"Parameters used → Generations: {GEN}, Population: {POP}, CO_R: {CO_R}, MUT_R: {MUT_R}")
+        st.info(f"Parameters used → CO_R: {CO_R}, MUT_R: {MUT_R}, Generations: {GEN}, Population: {POP}")
