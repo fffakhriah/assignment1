@@ -25,10 +25,10 @@ def read_csv_to_dict(file_path):
 # ==================== STREAMLIT UI ====================
 st.set_page_config(page_title="TV Scheduling Optimizer", layout="wide")
 st.title("📺 TV Program Scheduling Optimizer")
-st.write("This app uses a Genetic Algorithm to find the best TV schedule based on ratings.")
+st.write("This app uses a Genetic Algorithm to find the best TV schedule based on program ratings.")
 
-# Use local file path (same folder as main.py)
-file_path = "program_ratings.csv"
+# Use your modified CSV file
+file_path = "program_ratings_modified.csv"
 program_ratings_dict = read_csv_to_dict(file_path)
 
 if not program_ratings_dict:
@@ -40,10 +40,10 @@ ratings = program_ratings_dict
 # ========================================
 # LAYOUT: KIRI untuk input, KANAN untuk result
 # ========================================
-col_left, col_right = st.columns([1, 2])  # left narrower, right lebih luas
+col_left, col_right = st.columns([1, 2])
 
 # --------------------
-# Kiri: dropdown + button
+# Kiri: parameter input
 # --------------------
 with col_left:
     st.header("⚙️ Parameters")
@@ -57,17 +57,32 @@ with col_left:
         options=[10, 20, 50, 100, 150, 200],
         index=2
     )
-    CO_R = 0.8
-    MUT_R = 0.2
-    EL_S = 2
 
+    # Add sliders for Crossover & Mutation Rate
+    CO_R = st.slider(
+        "Crossover Rate (CO_R)",
+        min_value=0.0,
+        max_value=0.95,
+        value=0.8,
+        step=0.05
+    )
+
+    MUT_R = st.slider(
+        "Mutation Rate (MUT_R)",
+        min_value=0.01,
+        max_value=0.05,
+        value=0.02,
+        step=0.01
+    )
+
+    EL_S = 2
     run_button = st.button("🚀 Run Genetic Algorithm")
 
 # --------------------
-# Kanan: hasil (kotak biasa, lebih compact)
+# Kanan: hasil (kotak biasa)
 # --------------------
 with col_right:
-    st.header("🎯 Best Schedule Achieved!")
+    st.header("🎯 Best Schedule Result")
     if run_button:
         with st.spinner("Running Genetic Algorithm..."):
             all_programs = list(ratings.keys())
@@ -121,16 +136,19 @@ with col_right:
                     population = new_population[:population_size]
                 return max(population, key=fitness_function)
 
-            best_schedule = genetic_algorithm()
+            best_schedule = genetic_algorithm(crossover_rate=CO_R, mutation_rate=MUT_R)
             total_rating = fitness_function(best_schedule)
 
         st.success("✅ Optimal Schedule Found!")
 
-        # ==================== Compact Result Kotak Biasa ====================
+        # ==================== Display result ====================
         st.subheader("📅 Schedule Table")
         st.table({
             "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
             "Program": best_schedule
         })
+
         st.subheader("🏆 Total Rating")
         st.write(f"**Total Ratings:** {total_rating:.2f}")
+
+        st.info(f"Parameters used → Generations: {GEN}, Population: {POP}, CO_R: {CO_R}, MUT_R: {MUT_R}")
