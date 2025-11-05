@@ -64,7 +64,7 @@ with col_left:
     run_button = st.button("🚀 Run Genetic Algorithm")
 
 # --------------------
-# Kanan: hasil (compact dengan expander)
+# Kanan: hasil (kotak biasa, lebih compact)
 # --------------------
 with col_right:
     st.header("🎯 Best Schedule Achieved!")
@@ -126,10 +126,11 @@ with col_right:
 
         st.success("✅ Optimal Schedule Found!")
 
-        # ==================== Compact Result dengan Expander ====================
-        with st.expander("📅 View Optimized Schedule"):
-            st.table({
-                "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
-                "Program": best_schedule
-            })
-            st.write(f"**Total Ratings:** {total_rating:.2f}")
+        # ==================== Compact Result Kotak Biasa ====================
+        st.subheader("📅 Schedule Table")
+        st.table({
+            "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
+            "Program": best_schedule
+        })
+        st.subheader("🏆 Total Rating")
+        st.write(f"**Total Ratings:** {total_rating:.2f}")
