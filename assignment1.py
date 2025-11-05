@@ -67,7 +67,7 @@ with col_left:
 # Kanan: hasil
 # --------------------
 with col_right:
-    st.header("📊 Result")
+    st.header("🎯 Best Schedule Achieved!")
     if run_button:
         with st.spinner("Running Genetic Algorithm..."):
             all_programs = list(ratings.keys())
